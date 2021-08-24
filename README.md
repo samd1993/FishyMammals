@@ -1,4 +1,4 @@
-# Not so different  ><>  ('.')
+# Not so different  ><>  ('.') project
 ## Code and data files for Degregori et al. (in prog) "Coral reef fish gut microbiomes converge with mammals"
 ### This project analyzes the effects of host diet and host phylogeny on coral reef fish gut microbiomes and the possible convergence between fish and mammal gut microbiomes 
 
