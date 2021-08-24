@@ -1,0 +1,43 @@
+DATASET_STYLE
+
+SEPARATOR SPACE
+
+COLOR #ffff00
+
+DATASET_LABEL spearman_r_partial
+
+DATA
+#NODE_ID TYPE COLOR LABEL_OR_STYLE SIZE_FACTOR
+node35 branch node #1b068d 2 normal
+node43 branch node #5c01a6 2 normal
+node42 branch node #c43e7f 2 normal
+node40 branch node #7e03a8 2 normal
+node48 branch node #5302a3 2 normal
+node39 branch node #0d0887 2 normal
+node55 branch node #0d0887 2 normal
+node38 branch node #0d0887 2 normal
+node184 branch node #0d0887 2 normal
+node192 branch node #a62098 2 normal
+node195 branch node #c6417d 2 normal
+node191 branch node #b83289 2 normal
+node175 branch node #7501a8 2 normal
+node229 branch node #fbd324 2 normal
+node265 branch node #20068f 2 normal
+node264 branch node #0d0887 2 normal
+node263 branch node #6900a8 2 normal
+node262 branch node #f0f921 2 normal
+node257 branch node #fcd225 2 normal
+node215 branch node #f79342 2 normal
+node199 branch node #de6164 2 normal
+node173 branch node #d04d73 2 normal
+node298 branch node #b7318a 2 normal
+node331 branch node #9a169f 2 normal
+node324 branch node #9511a1 2 normal
+node292 branch node #bb3488 2 normal
+node375 branch node #f3874a 2 normal
+node383 branch node #a31e9a 2 normal
+node391 branch node #8707a6 2 normal
+node388 branch node #5b01a5 2 normal
+node408 branch node #5e01a6 2 normal
+node415 branch node #5801a4 2 normal
+node419 branch node #a31e9a 2 normal

@@ -1,0 +1,16 @@
+DATASET_COLORSTRIP
+
+SEPARATOR SPACE
+
+COLOR #b2df8a
+
+DATASET_LABEL clade_highlights
+
+LEGEND_TITLE host_colors
+LEGEND_SHAPES 1 1
+LEGEND_COLORS #b2df8a #1f78b4
+LEGEND_LABELS Actinopterygii Mammalia
+
+DATA
+node38 #b2df8a
+node415 #1f78b4

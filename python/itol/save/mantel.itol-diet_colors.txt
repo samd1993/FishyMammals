@@ -1,0 +1,20 @@
+DATASET_COLORSTRIP
+
+SEPARATOR SPACE
+
+COLOR #b2df8a
+
+DATASET_LABEL clade_highlights
+
+LEGEND_TITLE host_colors
+LEGEND_SHAPES 1 1 1 1 1 1
+LEGEND_COLORS #b2df8a #1f78b4 #33a02c #6a3d9a #b2df8a #fb9a99
+LEGEND_LABELS carnivore herbivore omnivore planktivore detritivore corallivore
+
+DATA
+node13 #6a3d9a
+node419 #1f78b4
+node419 #33a02c
+node419 #b2df8a
+node30 #fb9a99
+node35 #b2df8a

@@ -1,0 +1,32 @@
+DATASET_PIECHART
+SEPARATOR SPACE
+DATASET_LABEL pearson_p
+COLOR #ff0000
+FIELD_COLORS #ff0000
+FIELD_LABELS p-value
+MAXIMUM_SIZE 30
+BORDER_WIDTH 0
+DATA
+node42 0 20 1
+node40 0 20 1
+node48 0 10 1
+node39 0 20 1
+node195 0 20 1
+node191 0 30 1
+node229 0 30 1
+node262 0 30 1
+node257 0 30 1
+node215 0 30 1
+node199 0 30 1
+node173 0 30 1
+node298 0 30 1
+node331 0 20 1
+node324 0 30 1
+node292 0 20 1
+node375 0 20 1
+node383 0 30 1
+node391 0 30 1
+node388 0 30 1
+node408 0 30 1
+node415 0 30 1
+node419 0 30 1
