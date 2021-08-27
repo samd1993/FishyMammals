@@ -1,0 +1,62 @@
+---
+title: "Fish Relatedness vs microbiome"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Generate fish tree-->make distance matrix of it-->then melt matrix for linear model
+```{r}
+library(fishtree)
+library(reshape2)
+genomic_fish <- c("Epibulus insidiator","Naso lituratus","Chlorurus spilurus","Ctenochaetus striatus","Cephalopholis argus","Cephalopholis urodeta","Epinephelus merra","Halichoeres trimaculatus","Dascyllus flavicaudus","Aulostomus chinensis","Abudefduf sexfasciatus","Chaetodon ornatissimus","Chaetodon reticulatus","Chaetodon auriga","Rhinecanthus aculeatus","Zebrasoma scopas","Sargocentron spiniferum","Myripristis violacea", "Stegastes nigricans","Myripristis berndti")
+
+tree <- fishtree::fishtree_phylogeny(specie=genomic_fish)
+
+library(ape)
+write.tree(tree, file="fish-tree.nwk")
+
+relatedness_matrix_fish <- ape::vcv(tree, corr = TRUE)
+nrow(relatedness_matrix_fish)
+rmf=melt(relatedness_matrix_fish)
+rmf
+
+write.csv(rmf,file="relatedness_matrix_fish_melted.csv")
+```
+
+
+In between these steps I basically generate a microbiome distance matrix in python and join the 2 matrices together to line up each species with relatedness value and microbiome distance value which become X and Y..this is the resulting data file with 100k points so you may need to subset a small test file to play with first
+
+```{r}
+setwd("C:/Users/samde/OneDrive - UCLA IT Services/Fish Project/ISLAND COMPILED PROJECT/R/Relatedness")
+```
+
+```{r}
+rm=read.csv('relatedness_vs_microbiome_full_fish.csv', header=TRUE, sep=',')
+head(rm)
+```
+
+```{r}
+library(ggplot2)
+```
+
+```{r}
+ggplot(rm, aes(x=relatedness, y=similarity, color=dietA)) +
+  geom_point()+
+  geom_jitter(width=0.015)
+```
+```{r}
+ggplot(rm, aes(x=relatedness, y=similarity, color=dietB)) +
+  geom_point()+
+  geom_jitter(width=0.015)+
+  geom_smooth(method=lm, se=FALSE, fullrange=TRUE)
+
+```
+```{r}
+ggplot(rm, aes(x=relatedness, y=similarity, color=dietAandB)) +
+  geom_point()+
+  geom_jitter(width=0.015)
+```
+
