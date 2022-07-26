@@ -1,4 +1,4 @@
-# Song et al. (2020) itol mantel figure reproduce attempt 
+# See Song et al. (2020) for the original scripts
 
 ## After hours and hours of blood sweat and tears I have finally got python, jupyter, and qiime2 to work in peaceful coexistence
 
