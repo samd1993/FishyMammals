@@ -1,0 +1,1026 @@
+---
+title: "merged2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+SO here I had to update as many packages as it would let me. Then install ape and clicking YES when prompted to restart. Same for data.table. Then this code worked for qiime2R
+```{r}
+install.packages('remotes')
+library(remotes)
+remotes::install_github("jbisanz/qiime2R")
+
+```
+```{r}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install()
+library(BiocManager)
+source('http://bioconductor.org/biocLite.R')
+biocLite('phyloseq')
+BiocManager::install("phyloseq") #this last line seems to work
+```
+
+
+```{r}
+library(phyloseq)
+library(ggplot2)
+library(qiime2R)
+setwd("C:/Users/samde/OneDrive - UCLA IT Services/Fish Project/ISLAND COMPILED PROJECT/R")
+ps=qza_to_phyloseq(
+  features = "table.qza",
+  taxonomy= "taxonomy.qza",
+  metadata = "compiled_island_metadata.txt"
+)
+ps
+```
+```{r}
+
+islclean= subset_taxa(ps, !Kingdom=="Eukaryota" & !Family=="Mitochondria" & !Order=="Chloroplast" & !Phylum=="Unassigned" & !Phylum=="Vertebrata")
+islclean
+
+islcleanf2 = filter_taxa(islclean, function(x) sum(x > 2) > (0.0005*length(x)), TRUE)
+islcleanf2
+
+islcleanf = filter_taxa(islclean, function(x) sum(x > 1) > (0.005*length(x)), TRUE)
+islcleanf
+
+iscleanft=transform_sample_counts(islcleanf, function(x)  x/sum(x))
+iscleanft
+```
+
+```{r}
+plot_ordered_bar<-function (physeq, x = "Sample", 
+                                    y = "Abundance", 
+                                    fill = NULL, 
+                                    leg_size = 0.5,
+                                    title = NULL) {
+  require(ggplot2)
+  require(phyloseq)
+  require(plyr)
+  require(grid)
+  bb <- psmelt(physeq)
+
+  samp_names <- aggregate(bb$Abundance, by=list(bb$Sample), FUN=sum)[,1]
+  .e <- environment()
+  bb[,fill]<- factor(bb[,fill], rev(sort(unique(bb[,fill])))) #fill to genus
+
+
+  bb<- bb[order(bb[,fill]),] # genus to fill
+  p = ggplot(bb, aes_string(x = x, y = y, 
+                            fill = fill), 
+             environment = .e, ordered = FALSE)
+
+
+  p = p +geom_bar(stat = "identity", 
+                  position = "stack", 
+                  color = "black") 
+
+  p = p + theme(axis.text.x = element_text(angle = -90, hjust = 0))
+  
+  p = p +theme(axis.title.x=element_blank())
+
+  p = p + guides(fill = guide_legend(override.aes = list(colour = NULL), reverse=FALSE)) + 
+    theme(legend.key = element_rect(colour = "black")) 
+
+  p = p + theme(legend.key.size = unit(leg_size, "cm"))
+
+
+  if (!is.null(title)) {
+    p <- p + ggtitle(title)
+  }
+  return(p)
+}
+
+# END #
+```
+
+```{r}
+ isp <- prune_samples(sample_sums(islclean)>=500, islclean)
+isp
+ir=rarefy_even_depth(isp)
+
+imr <- merge_samples(ir, "Tax")
+
+####trying this separately to see if not filtering has an effect..not much diff from filtereing at 3 reads#####
+ip=tax_glom(imr,taxrank="Phylum")
+ipt=transform_sample_counts(ip, function(x)  x/sum(x))
+plot_ordered_bar(ipt,fill="Phylum")
+#################################
+
+imrf = filter_taxa(imr, function(x) sum(x > 1) > (0.055*length(x)), TRUE)
+imrf
+
+imrfp =tax_glom(imrf,taxrank="Phylum")
+
+
+imrfpt=transform_sample_counts(imrfp, function(x)  x/sum(x))
+imrfpt
+plot_ordered_bar(imrfpt,fill="Phylum")
+
+
+pd <- psmelt(imrfpt)
+
+ipd<- ggplot(pd, mapping=aes(x = Sample, y = Abundance,fill=Phylum))
+  ipd2=( ipd +geom_bar(stat="identity")
+        +scale_fill_manual(values=c("#ed9520",
+"#3659cb",
+"#3cc755",
+"#855bdb",
+"#77c547",
+"#9e42b8",
+"#b2c131",
+"#6978f4",
+"#6ba124",
+"#e567d0",
+"#4ac670",
+"#c6359c",
+"#3d9d3e",
+"#be77e5",
+"#417b24",
+"#6c4fb5",
+"#dcb137",
+"#5b85e8",
+"#b2b143",
+"#7b4a9e",
+"#34c78e",
+"#e84787",
+"#81c675",
+"#a74e9d",
+"#95b65a",
+"#8376d1",
+"#da9739",
+"#5259a9",
+"#988720",
+"#3464ab",
+"#e15231",
+"#46c6c4",
+"#e23c56",
+"#6ec194",
+"#b52c2a",
+"#52b7e5",
+"#da762e",
+"#6599e5",
+"#ae491b",
+"#4889bc",
+"#ab731e",
+"#aa8bd6",
+"#516615",
+"#dc85d1",
+"#478f55",
+"#b13872",
+"#329981",
+"#b73653",
+"#306a3c",
+"#e57e9b",
+"#277257",
+"#db6661",
+"#486a2d",
+"#aaa4e3",
+"#7c8930",
+"#785a99",
+"#d3a952",
+"#5d679c",
+"#7b6f20",
+"#a05d8f",
+"#85ac6c",
+"#864069",
+"#bdb26f",
+"#d690bd",
+"#625910",
+"#96455a",
+"#7b874c",
+"#ef8e71",
+"#62612c",
+"#b25f5e",
+"#7d5719",
+"#e4aa78",
+"#9a472a",
+"#a5824b",
+"#8c582f",
+"#c0774c"))
+# +theme(legend.position="none")
+  )
+  ipd2
+
+```
+```{r}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("limma")
+```
+```{r}
+library("limma")
+GB_st = merge_samples(islcleanf, "Diet1")
+sample_data(GB_st)
+```
+
+Now create the object to calculate the variable intersections and then plot the Venn Diagram.
+
+```{r, warning=FALSE, message=FALSE}
+table_GB_st <- t(otu_table(GB_st))
+venn_counts <- vennCounts(table_GB_st)
+venn_counts
+```
+
+It is possible to plot interesections of up to 5 group variables. Plots are high customizable, please run help(vennDiagram) for more details on the function.
+
+```{r, warning=FALSE, message=FALSE}
+vennDiagram(venn_counts, cex=c(1,1.2,0.8),
+            names = c("carnivore", "herbivore", "omnivore"),
+            circle.col = c("red","chartreuse3","blue"))
+ggsave("venn.pdf",vennDiagram(venn_counts, cex=c(1,1.2,0.8),
+            names = c("carnivore", "herbivore", "omnivore"),
+            circle.col = c("red","chartreuse3","blue")),units = "in",width=6, height =4)
+```
+
+```{r}
+library(phyloseq)
+library(ggplot2)
+library(qiime2R)
+setwd("C:/Users/samde/OneDrive - UCLA IT Services/Fish Project/ISLAND COMPILED PROJECT/mammal")
+psm=qza_to_phyloseq(
+  features = "allmergedcleantable.qza",
+  taxonomy= "allmergedtaxonomy.qza",
+  metadata = "allmerged-metadata.txt")
+psm
+```
+
+
+
+```{r}
+
+imf= subset_taxa(psm, !Kingdom=="Eukaryota" & !Family=="Mitochondria" & !Order=="Chloroplast" & !Phylum=="Unassigned" & !Phylum=="Vertebrata")
+imf
+
+imf2 = filter_taxa(imf, function(x) sum(x > 2) > (0.00005*length(x)), TRUE)
+imf2
+
+imf2.03 = filter_taxa(imf, function(x) sum(x > 2) > (0.003*length(x)), TRUE)
+imf2.03
+
+iscleanft=transform_sample_counts(islcleanf, function(x)  x/sum(x))
+iscleanft
+```
+library("limma")
+
+```{r}
+ imfp <- prune_samples(sample_sums(imf2)>=500, imf2)
+imfp
+
+imf2r=rarefy_even_depth(imfp)
+imf2r
+```
+```{r}
+ig2r=tax_glom(imf2r,taxrank="Genus")
+herb = c("herbivore", "H")
+# Here's the recommended/intended one line
+imhr=subset_samples(ig2r, diet %in% herb)
+GB_st = merge_samples(imhr, "diet")
+sample_data(GB_st)
+
+table_GB_st <- t(otu_table(GB_st, ))
+venn_counts <- vennCounts(table_GB_st)
+venn_counts
+
+vennDiagram(venn_counts, cex=c(1,1.2,0.8),
+            names = c("Mammal herbivores", "Fish herbivores"),
+            circle.col = c("red","blue"))
+
+```
+```{r}
+memory.limit()
+```
+
+```{r}
+ig=tax_glom(imf2,taxrank="Genus")
+herb = c("herbivore", "H")
+# Here's the recommended/intended one line
+imh=subset_samples(ig, diet %in% herb)
+GB_st = merge_samples(imh, "diet")
+sample_data(GB_st)
+
+table_GB_st <- t(otu_table(GB_st, ))
+venn_counts <- vennCounts(table_GB_st)
+venn_counts
+
+vennDiagram(venn_counts, cex=c(1,1.2,0.8),
+            names = c("Mammal herbivores", "Fish herbivores"),
+            circle.col = c("red","blue"))
+
+
+```
+```{r}
+all = c("herbivore", "H")
+# Here's the recommended/intended one line
+imh=subset_samples(ig, diet1 != "waterstress")
+GB_st = merge_samples(ig, "diet1")
+sample_data(GB_st)
+
+table_GB_st <- t(otu_table(GB_st, ))
+venn_counts <- vennCounts(table_GB_st)
+venn_counts
+
+vennDiagram(venn_counts, cex=c(1,1.2,0.8),
+            names = c("carnivore","environment", "herbivore","omnivore"),
+            circle.col = c("red","blue","green","yellow"))
+```
+```{r}
+all = c("herbivore", "H")
+# Here's the recommended/intended one line
+imh=subset_samples(ig2r, diet == "herbivore" |  diet=="H" | diet =="carnivore" | diet =="C")
+GB_st = merge_samples(imh, "diet")
+sample_data(GB_st)
+
+table_GB_st <- t(otu_table(GB_st))
+venn_counts <- vennCounts(table_GB_st)
+venn_counts
+
+vennDiagram(venn_counts, cex=c(1,1.2,0.8),
+            names = c("C","carnivore", "H","herbivore"),
+            circle.col = c("red","blue","green","yellow"))
+```
+```{r}
+write.csv(table_GB_st,file= "shared-genera-dietmerged2.csv")
+write.csv(imh@tax_table,file= "genera_taxonomy.csv")
+```
+
+
+```{r}
+
+ggsave("venn.pdf",vennDiagram(venn_counts, cex=c(1,1.2,0.8),
+            names = c("carnivore", "herbivore", "omnivore"),
+            circle.col = c("red","chartreuse3","blue")),units = "in",width=6, height =4)
+```
+      
+```{r}
+carn = c("carnivore", "C")
+# Here's the recommended/intended one line
+imh=subset_samples(ig2r, diet %in% carn)
+GB_st = merge_samples(imh, "diet")
+sample_data(GB_st)
+
+table_GB_st <- t(otu_table(GB_st, ))
+venn_counts <- vennCounts(table_GB_st)
+venn_counts
+
+vennDiagram(venn_counts, cex=c(1,1.2,0.8),
+            names = c("Mammal carnivores", "Fish carnivores"),
+            circle.col = c("red","blue"))
+
+```
+          #adding in corallivores
+          
+```{r}
+imh=subset_samples(ig2r, diet == "herbivore" |  diet=="H" | diet =="carnivore" | diet =="C" | diet =="corallivore")
+GB_st = merge_samples(imh, "diet")
+sample_data(GB_st)
+
+table_GB_st <- t(otu_table(GB_st))
+venn_counts <- vennCounts(table_GB_st)
+venn_counts
+
+vennDiagram(venn_counts, cex=c(1,1.2,0.8),
+            names = c("C","carnivore", "corallivore","H","herbivore"),
+            circle.col = c("red","blue","green","yellow","aquamarine"))
+```
+      #comparing mammals to mammals now and same for fish
+```{r}
+mamm = c("H", "C")
+# Here's the recommended/intended one line
+imh=subset_samples(ig, diet %in% mamm)
+GB_st = merge_samples(imh, "diet")
+sample_data(GB_st)
+
+table_GB_st <- t(otu_table(GB_st, ))
+venn_counts <- vennCounts(table_GB_st)
+venn_counts
+
+vennDiagram(venn_counts, cex=c(1,1.2,0.8),
+            names = c("Mammal carnivores", "Mammal herbivoress"),
+            circle.col = c("red","blue"))
+```
+      
+      #now for fish
+      
+```{r}
+fish = c("carnivore", "herbivore")
+# Here's the recommended/intended one line
+imh=subset_samples(ig, diet %in% fish)
+GB_st = merge_samples(imh, "diet")
+sample_data(GB_st)
+
+table_GB_st <- t(otu_table(GB_st, ))
+venn_counts <- vennCounts(table_GB_st)
+venn_counts
+
+vennDiagram(venn_counts, cex=c(1,1.2,0.8),
+            names = c("Fish carnivores", "Fish herbivores"),
+            circle.col = c("red","blue"))
+```
+    #Now trying filtered at 2 reads at 003 percent
+    
+```{r}
+ imf203p <- prune_samples(sample_sums(imf2.03)>=500, imf2.03)
+imf203pr=rarefy_even_depth(imf203p)
+ig2=tax_glom(imf203pr,taxrank="Genus")
+herb = c("herbivore", "H")
+# Here's the recommended/intended one line
+imh=subset_samples(ig2, diet %in% herb)
+GB_st = merge_samples(imh, "diet")
+sample_data(GB_st)
+
+table_GB_st <- t(otu_table(GB_st, ))
+venn_counts <- vennCounts(table_GB_st)
+venn_counts
+
+vennDiagram(venn_counts, cex=c(1,1.2,1),
+            names = c("Mammal herbivores", "Fish herbivores"),
+            circle.col = c("red","blue"))
+```
+    
+    
+      #Now checking for family
+      
+```{r}
+ imf2prune <- prune_samples(sample_sums(imf2)>=500, imf2)
+imf2r=rarefy_even_depth(imf2prune)
+iF=tax_glom(imf2r,taxrank="Family")
+herb = c("herbivore", "H")
+# Here's the recommended/intended one line
+imh=subset_samples(iF, diet %in% herb)
+GB_st = merge_samples(imh, "diet")
+sample_data(GB_st)
+
+table_GB_st <- t(otu_table(GB_st, ))
+venn_counts <- vennCounts(table_GB_st)
+venn_counts
+
+vennDiagram(venn_counts, cex=c(1,1.2,1),
+            names = c("Mammal herbivores", "Fish herbivores"),
+            circle.col = c("red","blue"))
+
+```
+      
+      #I need to combine corallivores with herbivores to see if it helps
+
+allmergedmetadata2=gsub("corallivore","herbivore","allmerged-metadata.txt")
+```{r}
+allmergedmetadata2=gsub("corallivore","herbivore","allmerged-metadata.txt")
+amd=read.table(allmergedmetadata2)
+```
+
+```{r}
+library(phyloseq)
+library(ggplot2)
+library(qiime2R)
+setwd("C:/Users/samde/OneDrive - UCLA IT Services/Fish Project/ISLAND COMPILED PROJECT/mammal")
+ps2=qza_to_phyloseq(
+  features = "allmergedcleantable.qza",
+  taxonomy= "allmergedtaxonomy.qza",
+  metadata = "allmerged-metadata.txt",
+  tree = "allmergedrooted-tree.qza")
+ps2
+
+memory.limit()
+ memory.limit(size=86000)
+ 
+ic= subset_taxa(ps2, !Kingdom=="Eukaryota" & !Family=="Mitochondria" & !Order=="Chloroplast" & !Phylum=="Unassigned" & !Phylum=="Vertebrata")
+ic
+
+icf = filter_taxa(ic, function(x) sum(x > 2) > (0.00005*length(x)), TRUE)
+icf
+
+icf1 = filter_taxa(ic, function(x) sum(x > 1) > (0.00005*length(x)), TRUE)
+icf1
+
+icf2 = filter_taxa(ic, function(x) sum(x > 2) > (0.003*length(x)), TRUE)
+icf2
+
+ icfp <- prune_samples(sample_sums(icf)>=500, icf)
+icfpr=rarefy_even_depth(icfp)
+
+##~~~~~~~
+##  glomming at diff levels now
+icg=tax_glom(icf,taxrank="Genus")
+icg1=tax_glom(icf1,taxrank="Genus")
+icf1=tax_glom(icf1,taxrank="Family")
+
+
+icg=tax_glom(icfpr,taxrank="Genus")
+icf=tax_glom(icf2pr,taxrank="Family")
+
+
+#now doing just by reads instead of percent because fish are too variable for that
+ icp <- prune_samples(sample_sums(icf)>=500, icf)
+icpr=rarefy_even_depth(icp)
+
+
+icg2=tax_glom(icpr,taxrank="Genus")
+icf2=tax_glom(icpr,taxrank="Family")
+
+
+
+
+```
+if above doesnt work due to memory limit error then use this memory limit thing
+```{r}
+memory.limit()
+ memory.limit(size=86000)
+```
+##HERBIVORES 
+
+```{r}
+herb = c("herbivore", "H")
+# Here's the recommended/intended one line
+imh=subset_samples(icg1, diet2 %in% herb)
+GB_st = merge_samples(imh, "diet2")
+sample_data(GB_st)
+
+table_GB_st <- t(otu_table(GB_st, ))
+head(table_GB_st)
+venn_counts <- vennCounts(table_GB_st)
+venn_counts
+
+vennDiagram(venn_counts, cex=c(1,1.2,1),
+            names = c("Mammal herbivores", "Fish herbivores"),
+            circle.col = c("red","blue"))
+```
+Family
+
+```{r}
+herb = c("herbivore", "H")
+# Here's the recommended/intended one line
+imh=subset_samples(icf1, diet2 %in% herb)
+GB_st = merge_samples(imh, "diet2")
+sample_data(GB_st)
+
+table_GB_st <- t(otu_table(GB_st, ))
+venn_counts <- vennCounts(table_GB_st)
+venn_counts
+
+vennDiagram(venn_counts, cex=c(1,1.2,1),
+            names = c("Mammal herbivores", "Fish herbivores"),
+            circle.col = c("red","blue"))
+```
+
+```{r}
+carn = c("carnivore", "C")
+# Here's the recommended/intended one line
+imh=subset_samples(icf2, diet2 %in% carn)
+GB_st = merge_samples(imh, "diet2")
+sample_data(GB_st)
+
+table_GB_st <- t(otu_table(GB_st, ))
+venn_counts <- vennCounts(table_GB_st)
+venn_counts
+
+vennDiagram(venn_counts, cex=c(1,1.2,1),
+            names = c("Mammal carnivores", "Fish carnivores"),
+            circle.col = c("red","blue"))
+```
+```{r}
+
+```
+
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ORDINATION
+
+```{r}
+set.seed(1)
+
+merged_ord <- ordinate(
+  physeq = icf2pr, 
+  method = "MDS", 
+  distance = "unifrac")
+
+plot_ordination(icf2pr, merged_ord, type="Samples", color="diet")
+```
+
+```{r}
+set.seed(2)
+
+merged_ordp <- ordinate(
+  physeq = icf2pr, 
+  method = "PCoA", 
+  distance = "unifrac")
+
+plot_ordination(icf2pr, merged_ordp, type="Samples", color="diet")
+
+```
+
+```{r}
+set.seed(3)
+
+merged_ordi <- ordinate(
+  physeq = icf, 
+  method = "PCoA", 
+  distance = "unifrac")
+
+plot_ordination(icf, merged_ordi, type="Samples", color="diet")
+```
+#now attempting to make a mirrored barplot from the venn diagram tables
+
+```{r}
+library(reshape2)
+hc=read.table("herbcarn.txt",row.names=1)
+hc$otu=row.names(hc)
+
+#have to tell ggplot2 that the otu column is ordered so it ownt automatically sort it alphabetically
+hc$otu <- factor(hc$otu, levels = hc$otu)
+
+mhc=melt(hc,id.vars="otu")
+
+
+(p=ggplot(mhc,aes(otu,value,fill=variable))+
+    geom_bar(stat="identity")
+)
+p
+
+##Now trying negative values
+nhc=hc
+
+nhc$herbshared=nhc$herbshared*(-1)
+
+nhc$otu <- factor(nhc$otu, levels = nhc$otu)
+
+mnhc=melt(nhc,id.vars="otu")
+
+
+(p=ggplot(mnhc,aes(otu,value,fill=variable))+
+    geom_bar(stat="identity")
+)
+p
+
+##install ggallin to see if this log transform works
+
+install.packages("ggallin")
+library(ggallin)
+hc=read.table("herbcarn.txt",row.names=1)
+hc$otu=row.names(hc)
+nhc$otu <- factor(nhc$otu, levels = nhc$otu)
+
+mnhc=melt(nhc,id.vars="otu")
+(p=ggplot(mnhc,aes(otu,value,fill=variable))+
+    geom_bar(stat="identity")+
+  
+    scale_y_continuous(trans = pseudolog10_trans,limits = c(-4000,4000))
+)
+p
+
+
+```
+```{r}
+mnhc=melt(nhc,id.vars="otu")
+(p1=ggplot(mnhc,aes(otu,value,fill=variable))+
+    geom_bar(stat="identity")
+  
+  
+)
+p1
+```
+now trying it with properly ordered bar
+```{r}
+library(reshape2)
+setwd("C:/Users/samde/OneDrive - UCLA IT Services/Fish Project/ISLAND COMPILED PROJECT/R")
+hco=read.table("herbcarnordered.txt",row.names=1)
+hco$otu=row.names(hco)
+
+
+
+##Now trying negative values
+nhco=hco
+
+nhco$herbshared=nhco$herbshared*(-1)
+
+
+nhco$otu <- factor(nhco$otu, levels = nhco$otu)
+nhco$herbshared=nhco$herbshared*(-1)
+
+mnhco=melt(nhco,id.vars="otu")
+mnhco
+mnhco$variable=factor(mnhco$variable,levels=c("herbshared","carnshared"))
+```
+
+```{r}
+pcolors=c("Proteobacteria"="#003f5c",
+Bacteroidota="#444e86",
+Verrucomicrobiota="#955196",
+Spirochaetota="#dd5182",
+Firmicutes="#ff6e54",
+Fusobacteria="#ffa600")
+```
+
+```{r}
+col=c(Firmicutes="#444e86",
+Fusobacteria="#003f5c",
+Proteobacteria="#ff6e54",
+Firmicutes="#444e86",
+Firmicutes="#444e86",
+Firmicutes="#444e86",
+Verrucomicrobiota="#dd5182",
+Proteobacteria="#ff6e54",
+Firmicutes="#444e86",
+Proteobacteria="#ff6e54",
+Firmicutes="#444e86",
+Bacteroidota="black",
+Firmicutes="#444e86",
+Firmicutes="#444e86",
+Bacteroidota="black",
+Firmicutes="#444e86",
+Firmicutes="#444e86",
+Firmicutes="#444e86",
+Spirochaetota="#003f5c",
+Bacteroidota="black",
+Firmicutes="#444e86",
+Bacteroidota="black")
+
+
+```
+
+
+```{r}
+(p=ggplot(mnhco,aes(otu,value,fill=variable))+
+    geom_bar(stat="identity")+
+  ylim(-1000,4000)+
+    theme_grey()+
+   ylab("Shared ASVs")+
+    labs(fill = "Host diet") +
+  scale_fill_manual(labels = c("herbivore", "carnivore"), values = c("#444e86", "#ff6e54"))+
+    theme_classic()+
+    theme(axis.text.x = element_text(angle = 0,size=12),
+              axis.text.y = element_text(size=10,face='bold'),
+          axis.title.x = element_text(size=14,vjust=-0.8),
+          axis.title.y=element_blank(),
+          title=element_text(size=16))+
+  theme(panel.grid=element_blank())+
+  theme(legend.text=element_text(size=12))+
+   theme(legend.position = c(0.8, 0.6))+
+   coord_flip()
+ 
+  
+          
+        )
+p
+
+#ggsave("herbcarnSharedASVs3.pdf",p,units=c("in"),width=8,height=3)
+
+
+```
+
+
+```{r}
+(p2=ggplot(mnhco,aes(otu,value,fill=variable))+
+    geom_bar(stat="identity")+
+  
+    scale_y_continuous(trans = pseudolog10_trans,limits = c(-1000,4000))
+)
+p2
+```
+
+Now I want to see how common Akkermensia muciniphila is across entire dataset
+
+```{r}
+ifish=subset_samples(icf1,host=="Actinopterygii")
+imam=subset_samples(icf1,host=="Mammalia")
+
+#first whole graph
+iAM = subset_taxa(icf1, Species=="Akkermansia_muciniphila")
+iAM
+
+pd <- psmelt(iAM)
+
+ipd<- ggplot(pd, mapping=aes(x = Sample, y = Abundance,fill=Species))
+  ipd2=( ipd +geom_bar(stat="identity")
+        + scale_y_continuous(trans='log2')
+        +scale_fill_manual(values=c("#ed9520",
+"#3659cb",
+"#3cc755",
+"#855bdb",
+"#77c547",
+"#9e42b8"
+))
+# +theme(legend.position="none")
+  )
+  ipd2
+
+```
+Now fish
+
+```{r}
+ifish=subset_samples(ic,host=="Actinopterygii")
+iAMf = subset_taxa(ifish, Genus=="Akkermansia")
+iAMf
+
+pd <- psmelt(iAMf)
+
+ipd<- ggplot(pd, mapping=aes(x = Sample, y = Abundance,fill=Species))
+  ipd2=( ipd +geom_bar(stat="identity")
+      #  + scale_y_continuous(trans='log2')
+        +scale_fill_manual(values=c("#ed9520",
+"#3659cb",
+"#3cc755",
+"#855bdb",
+"#77c547",
+"#9e42b8"
+))
+# +theme(legend.position="none")
+  )
+  ipd2
+
+```
+
+Now mammsl
+
+```{r}
+imam=subset_samples(ic,host=="Mammalia")
+iAMfm = subset_taxa(imam, Genus=="Akkermansia")
+iAMfm
+
+pdm <- psmelt(iAMfm)
+
+ipd<- ggplot(pdm, mapping=aes(x = Sample, y = Abundance,fill=Species))
+  ipd2=( ipd +geom_bar(stat="identity")
+       + scale_y_continuous(trans='log10')
+        +scale_fill_manual(values=c("#ed9520",
+"#3659cb",
+"#3cc755",
+"#855bdb",
+"#77c547",
+"#9e42b8"
+))
+# +theme(legend.position="none")
+  )
+  ipd2
+
+```
+
+##Pathway abundance plots
+
+```{r}
+library(qiime2R)
+library(limma)
+
+kd=qza_to_phyloseq(
+  features = "dietmergedkotable.qza",
+  metadata = "allmerged-metadata4.txt",
+  tree = "allmergedrooted-tree.qza")
+kd
+```
+
+```{r}
+ko<-read_qza("dietmergedkotable.qza")
+kd=ko$data
+kd=as.data.frame(kd)
+kd
+kd$herb=kd$herbivore+kd$corallivore
+kd= subset(kd, select=-c(herbivore,corallivore))
+kd
+
+write.csv(kd,file="kodiettable.csv")
+
+venn_counts <- vennCounts(kd)
+venn_counts
+vennDiagram(venn_counts, cex=c(1,1.2,1),
+            names = c("Mammal herb", "mam carn","carn","herb"),
+            circle.col = c("red","blue"))
+```
+```{r}
+
+GB_st = merge_samples(icf, "diet")
+sample_data(GB_st)
+
+table_GB_st <- t(otu_table(GB_st, ))
+venn_counts <- vennCounts(table_GB_st)
+venn_counts
+
+vennDiagram(venn_counts, cex=c(1,1.2,1),
+            names = c("Mammal carnivores", "Fish carnivores"),
+            circle.col = c("red","blue"))
+
+
+
+```
+```{r}
+library(reshape2)
+kp=read.table("kopathway.csv", header=TRUE, sep=",",row.names=1)
+kp
+kp$otu=row.names(kp)
+
+kp$otu <- factor(kp$otu, levels = kp$otu)
+
+
+mkp=melt(kp,id.vars="otu")
+mkp
+mkp=mkp[order(mkp$value),]
+mkp
+mkp$variable=factor(mkp$variable,level=c("herb","carn"))
+```
+
+```{r}
+(p=ggplot(mkp,aes(reorder(otu,-value),value,fill=variable))+
+    geom_bar(stat="identity")+
+  ylim(-7,5.5)+
+    theme_classic()+
+    ylab("clr (differential abundance)")+
+    labs(title = "Top herbivore and carnivore predicted pathways", fill = "Host diet") +
+  scale_fill_manual(labels = c("herbivore", "carnivore"), values = c("#444e86", "#ff6e54"))+
+    theme(axis.text.x = element_text(angle = 0,hjust=0.95,vjust=0.2,size=12),
+              axis.text.y = element_text(size=12),
+          axis.title.y = element_blank(),
+          axis.title.x=element_text(size=12),
+          title=element_text(size=14))+
+   theme(plot.title = element_text(hjust = 0.5,vjust=1))+
+    coord_flip()+
+ 
+  theme(legend.text=element_text(size=12))
+          
+        )
+p
+
+#ggsave("herbcarnSharedASVs3.pdf",p,units=c("in"),width=8,height=3)
+
+```
+
+~~~~~~~~~~~~~~~~~~
+##Doing fish vs mammal venn count comparison
+
+
+```{r}
+library("limma")
+fishmam = c("Actinopterygii", "Mammalia")
+# Here's the recommended/intended one line
+imgf=subset_samples(icg, host %in% fishmam)
+GB_st = merge_samples(imgf, "host")
+sample_data(GB_st)
+
+table_GB_st <- t(otu_table(GB_st, ))
+head(table_GB_st)
+write.csv(table_GB_st,file="fishmam_genus.csv")
+write.csv(imgf@tax_table,file="fishmam_tax.csv")
+
+venn_counts <- vennCounts(table_GB_st)
+venn_counts
+```
+
+```{r}
+fm=read.csv("fishmam-fig.csv",sep=",")
+fm$Name <- factor(fm$Name, levels=unique(fm$Name))
+fm$Host <- factor(fm$Host, levels=c("Mammal","Fish"))
+```
+
+```{r}
+(p=ggplot(fm,aes(Name,Variable,fill=Host))+
+    geom_bar(stat="identity")+
+  ylim(-5000,8000)+
+    theme_grey()+
+   ylab("Differentially abundant ASVs")+
+    labs(fill = "Host") +
+  scale_fill_manual(labels = c("Mammal", "Fish"), values = c("#444e86","#ff6e54"))+
+    theme_classic()+
+    theme(axis.text.x = element_text(angle = 0,size=12),
+              axis.text.y = element_text(size=10,face='bold'),
+          axis.title.x = element_text(size=14,vjust=-0.8),
+          axis.title.y=element_blank(),
+          title=element_text(size=16))+
+  theme(panel.grid=element_blank())+
+  theme(legend.text=element_text(size=12))+
+   theme(legend.position = c(0.8, 0.6))+
+   coord_flip()
+ 
+  
+          
+        )
+p
+
+#ggsave("herbcarnSharedASVs3.pdf",p,units=c("in"),width=8,height=3)
+
+```
+
