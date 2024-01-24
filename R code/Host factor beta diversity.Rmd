@@ -1,0 +1,170 @@
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+if (!requireNamespace("devtools", quietly = TRUE)){install.packages("devtools")}
+devtools::install_github("jbisanz/qiime2R")
+
+library('qiime2R')
+library(dplyr)
+library('tidyverse')
+library(ggplot2)
+library(vegan)
+```
+
+```{r}
+uwdistmam=read.table("uwmam-merged-distance-matrix.tsv")
+head(uwdistmam)
+
+uwd=read_qza('PCOAs/unweighted_unifrac_distance_matrixdietfixed400.qza')
+uwdm=as.matrix(uwd$data)
+md=read.table('allmerged-metadata4.txt',header=TRUE,sep='\t')
+md
+
+```
+Now trying to filter by just mammals
+```{r}
+mdm= md %>% 
+  filter(host == 'Mammalia')
+mdm
+
+ucol=colnames(uwdm)
+ucolm=intersect(ucol,)
+```
+
+
+```{r}
+  ad=adonis2(uwdm2~order*diet,mf13f2)
+  ad
+```
+
+```{r}
+mdf= md %>% 
+  filter(host == 'Actinopterygii')
+mdf
+length(unique(mdm$order))
+
+ucol=colnames(uwdm)
+
+
+#classic filter tool on distance matrix
+icol=intersect(mdf$sampleid,colnames(uwdm))
+irow=intersect(mdf$sampleid,rownames(uwdm))
+uwdm2F=uwdm[irow,icol]
+
+#Matching metadata to distance matrix
+mdff<- data.frame(mdf, row.names = 1)
+mdff2=mdff[irow, ]
+
+ad=adonis2(uwdm2F~order*diet,mdff2)
+ad
+```
+```{r}
+ ads=adonis2(uwdm2~species*diet,mf13f2)
+  ads
+```
+```{r}
+uwd2=read_qza('unweighted_unifrac_distance_matrixActinopterygii1k.qza')
+uwdm2=as.matrix(uwd2$data) 
+md2=read.table('allmerged-metadata5.txt',header=TRUE,sep='\t')
+md2
+
+
+```
+
+```{r}
+md2f= md2 %>% 
+  filter(host == 'Actinopterygii')
+md2f
+
+ucol=colnames(uwdm2)
+
+
+#classic filter tool on distance matrix
+icol=intersect(md2f$sampleid,colnames(uwdm2))
+irow=intersect(md2f$sampleid,rownames(uwdm2))
+uwdm22F=uwdm2[irow,icol]
+
+#Matching metadata to distance matrix
+md2ff<- data.frame(md2f, row.names = 1)
+md2ff2=md2ff[irow, ]
+
+adF2=adonis2(uwdm22F~order*diet,md2ff2)
+adF2
+```
+
+```{r}
+uwd2M=read_qza('unweighted_unifrac_distance_matrix_mam400.qza')
+uwdc2=as.matrix(uwd2M$data) 
+Md2=read.table('allmerged-metadata5.txt',header=TRUE,sep='\t')
+Md2
+
+Md2m= Md2 %>% 
+  filter(host == 'Mammalia')
+Md2m
+
+ucol=colnames(uwdc2)
+
+
+#classic filter tool on distance matrix
+icol=intersect(Md2m$sampleid,colnames(uwdc2))
+irow=intersect(Md2m$sampleid,rownames(uwdc2))
+uwdc22F=uwdc2[irow,icol]
+
+#Matching metadata to distance matrix
+Md2mf<- data.frame(Md2m, row.names = 1)
+Md2mf2=Md2mf[irow, ]
+
+adF2=adonis2(uwdc22F~order*diet,Md2mf2)
+adF2
+```
+```{r}
+uwd2M=read_qza('unweighted_unifrac_distance_matrix_mam400.qza')
+uwdc2=as.matrix(uwd2M$data) 
+Mcd2m=read.table('allmerged-metadata5.txt',header=TRUE,sep='\t')
+Mcd2m
+
+Mcd2m= Mcd2m %>% 
+  filter(host %in% c('Mammalia','Actinopterygii'))
+Mcd2m
+
+uwdc2=uwdm
+
+
+#classic filter tool on distance matrix
+icol=intersect(Mcd2m$sampleid,colnames(uwdc2))
+irow=intersect(Mcd2m$sampleid,rownames(uwdc2))
+uwdc22F=uwdc2[irow,icol]
+nrow(uwdc22F)
+#Matching metadata to distance matrix
+Mcd2mf<- data.frame(Mcd2m, row.names = 1)
+Mcd2mf2=Mcd2mf[irow, ]
+
+adc2=adonis2(uwdc22F~order*diet,Mcd2mf2)
+adc2
+```
+
+
+```{r}
+#so here this is filtering out families with at least 4 species and then taking up ot 10 of them each family to make sure results are similar
+mf13 <- mdm %>%
+  group_by(family) %>%
+  filter(n_distinct(species) >= 3)  %>% 
+  sample(,4)
+mf13
+
+# View the result
+list=mf13$sampletaxid
+
+#classic filter tool on distance matrix
+icol=intersect(mf13$sampleid,colnames(uwdm))
+irow=intersect(mf13$sampleid,rownames(uwdm))
+uwdm2=uwdm[irow,icol]
+
+#Matching metadata to distance matrix
+mf13f<- data.frame(mf13, row.names = 1)
+mf13f2=mf13f[irow, ]
+```
