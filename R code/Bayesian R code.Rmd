@@ -1,0 +1,111 @@
+library(tidyverse)
+library(brms)
+library(fishualize)
+library(tidybayes)
+library(patchwork)
+library(forcats)
+library(svglite)
+
+##### Load and clean data #####
+
+# read data
+data <- read_csv("fishmam-filtered-microbiome-vs-relatedness-final.csv")
+
+# wrangle and filter
+sub <- data %>% 
+  filter(!speciesA==speciesB) %>% # filter out comparison within same species
+  rename(dietAandB = `dietA:dietB`) %>% 
+  mutate(speciesAandB = paste(speciesA, speciesB, sep = ":")) # New name to standardize
+
+# Rename groups within dietAandB and speciesAandB so that duplicates are corrected:
+# e.g. "Fish herbivore: Mammal herbivore" and "Mammal herbivore: Fish herbivore" both become "Fish herbivore: Mammal herbivore"
+sub$dietAandB <- 
+  sapply(sub$dietAandB, function(x){
+    x2 <- sort(simplify(str_split(x, ":")))
+    str_remove(paste(x2[1], x2[2], sep = ":"), ":NA")
+  })
+sub$speciesAandB <- 
+  sapply(sub$speciesAandB, function(x){
+    x2 <- sort(simplify(str_split(x, ":")))
+    str_remove(paste(x2[1], x2[2], sep = ":"), ":NA")
+  })
+
+# Summarize by species comparison
+sum <- sub %>%
+  group_by(speciesAandB, dietAandB) %>%
+  summarize(relatedness = median(relatedness), similarity = mean(similarity)) %>%
+  arrange(similarity) 
+
+###### fit Bayesian model ######
+
+sub <- sum %>%
+  filter(dietAandB %in% c("Fish carnivore:Fish carnivore",
+                          "Fish carnivore:Fish herbivore",
+                          "Fish herbivore:Fish herbivore",
+                          "Mammal herbivore:Mammal herbivore",
+                          "Mammal carnivore:Mammal carnivore",
+                          "Mammal carnivore:Mammal herbivore",
+                          "Fish herbivore:Mammal herbivore",
+                          "Fish herbivore:Mammal carnivore",
+                          "Fish carnivore:Mammal herbivore",
+                          "Fish carnivore:Mammal carnivore"
+  ))
+
+fit <- brm(similarity ~ dietAandB,
+           data = sub, 
+           family = "beta", backend="cmdstanr", threads = 10)
+
+summary(fit)
+
+# checks
+pp_check(fit)
+bayes_R2(fit)
+
+# predict per diet pair
+nd <- data.frame(dietAandB = unique(sub$dietAandB))
+pred <- cbind(nd, fitted(fit, newdata = nd)) %>%
+  filter(dietAandB %in% c("Fish carnivore:Fish herbivore",
+                          "Mammal carnivore:Mammal herbivore",
+                          "Fish herbivore:Mammal herbivore",
+                          "Fish herbivore:Mammal carnivore",
+                          "Fish carnivore:Mammal herbivore",
+                          "Fish carnivore:Mammal carnivore"
+  ))
+
+sub2 <- sub %>%
+  filter(dietAandB %in% c("Fish carnivore:Fish herbivore",
+                          "Mammal carnivore:Mammal herbivore",
+                          "Fish herbivore:Mammal herbivore",
+                          "Fish herbivore:Mammal carnivore",
+                          "Fish carnivore:Mammal herbivore",
+                          "Fish carnivore:Mammal carnivore"
+  )) %>%
+  left_join(pred)
+
+plot <-
+  ggplot(pred, aes(y = factor(forcats::fct_reorder
+                              (dietAandB, Estimate, .desc= F)), x = Estimate)) +
+  geom_pointrange(aes(xmin = Q2.5, xmax = Q97.5), size = 1) +
+  
+  labs(y = "", x = "Similarity", fill = "Diets") +
+  theme_bw() +
+  theme(axis.text = element_text(color = "black", size = 12), 
+        axis.title = element_text(size = 14))
+plot
+
+ggsave("plot_similarity_simple.png", plot, width = 8, height = 4)
+
+plot <-
+  ggplot(pred, aes(y = factor(forcats::fct_reorder(dietAandB, Estimate, .desc= F)), x = Estimate)) +
+  geom_jitter(aes(x = similarity, y = factor(forcats::fct_reorder(dietAandB, Estimate, .desc= F))), 
+              data = sub2, alpha = 0.2, size = 0.5, color = "grey60") +
+  geom_pointrange(aes(xmin = Q2.5, xmax = Q97.5), size = 1) +
+  
+  labs(y = "", x = "Similarity", fill = "Diets") +
+  theme_bw() +
+  theme(axis.text = element_text(color = "black", size = 12), 
+        axis.title = element_text(size = 14))
+plot
+
+ggsave("plot_similarity_simple_jitter.png", plot, width = 8, height = 4)
+
