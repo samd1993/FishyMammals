@@ -9,3 +9,5 @@
 metadata is in the allmerged-metadata4.txt file
 
 raw sequence files can be found at: https://doi.org/10.6084/m9.figshare.21529092.v1
+
+To see alpha rarefaction curves, simply download the allmerged-alpha-rarefaction.qzv file and upload it to view.qiime2.org
